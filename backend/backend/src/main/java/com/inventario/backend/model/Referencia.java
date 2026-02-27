@@ -11,11 +11,8 @@ import lombok.*;
 public class Referencia {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idReferencia;
-
-    @Column(nullable = false, unique = true)
-    private String codigo;
+    @Column(name = "id_referencia", nullable = false, length = 50)
+    private String idReferencia;
 
     @Column(nullable = false, unique = true)
     private String nombre;
@@ -23,3 +20,4 @@ public class Referencia {
     @Column(nullable = false)
     private boolean activo = true;
 }
+

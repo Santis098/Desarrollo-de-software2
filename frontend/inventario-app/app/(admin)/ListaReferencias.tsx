@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   FlatList,
-  Button,
   TextInput,
   Alert,
   StyleSheet,
   ActivityIndicator,
+  Button,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -16,17 +16,17 @@ import {
   obtenerReferenciasActivas,
   obtenerReferenciasInactivas,
   obtenerReferenciaPorId,
-  actualizarReferencia,
-} from "../../services/referenciaService";
+  // actualizarReferencia, // no lo usamos aquí, lo usa la pantalla de edición
+} from "../../services/referenciaService"; // ajusta ruta si es necesario
 
 export default function ListaReferencias() {
   const [referencias, setReferencias] = useState<any[]>([]);
   const [referenciasFiltradas, setReferenciasFiltradas] = useState<any[]>([]);
-  const [searchCodigo, setSearchCodigo] = useState("");
+  const [searchText, setSearchText] = useState<string>(""); // ahora nombre claro
   const [usuarioActual, setUsuarioActual] = useState<any | null>(null);
 
   const [loadingLista, setLoadingLista] = useState(false);
-  const [loadingAccionId, setLoadingAccionId] = useState<number | null>(null);
+  const [loadingAccionId, setLoadingAccionId] = useState<string | null>(null);
 
   const [mostrarActivas, setMostrarActivas] = useState(true);
   const router = useRouter();
@@ -54,6 +54,7 @@ export default function ListaReferencias() {
     };
 
     verificarYcargar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mostrarActivas]);
 
   const cargarReferencias = async () => {
@@ -63,9 +64,12 @@ export default function ListaReferencias() {
         ? await obtenerReferenciasActivas()
         : await obtenerReferenciasInactivas();
 
-      const listaOrdenada = lista.sort((a: any, b: any) =>
-        a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
-      );
+      // ordenar por nombre (opcional)
+      const listaOrdenada = Array.isArray(lista)
+        ? lista.sort((a: any, b: any) =>
+            String(a.nombre).localeCompare(String(b.nombre), "es", { sensitivity: "base" })
+          )
+        : [];
 
       setReferencias(listaOrdenada);
       setReferenciasFiltradas(listaOrdenada);
@@ -77,18 +81,27 @@ export default function ListaReferencias() {
     }
   };
 
+  // Filtrado: por idReferencia y (opcional) por nombre
   useEffect(() => {
-    let lista = referencias;
+    const q = (searchText || "").trim().toLowerCase();
 
-    if (searchCodigo.trim() !== "") {
-      lista = lista.filter((ref) =>
-        String(ref.codigo).toLowerCase().includes(searchCodigo.toLowerCase())
-      );
+    if (q === "") {
+      setReferenciasFiltradas(referencias);
+      return;
     }
 
-    setReferenciasFiltradas(lista);
-  }, [searchCodigo, referencias]);
+    const lista = referencias.filter((ref) => {
+      const idRef = String(ref.idReferencia ?? "").toLowerCase();
+      const nombre = String(ref.nombre ?? "").toLowerCase();
 
+      // busca por idReferencia o por nombre
+      return idRef.includes(q) || nombre.includes(q);
+    });
+
+    setReferenciasFiltradas(lista);
+  }, [searchText, referencias]);
+
+  // Toggle estado (activar/desactivar) — usa obtenerReferenciaPorId y actualizarReferencia desde el backend
   const toggleEstado = (ref: any) => {
     Alert.alert(
       ref.activo ? "Desactivar referencia" : "Activar referencia",
@@ -100,14 +113,20 @@ export default function ListaReferencias() {
           onPress: async () => {
             setLoadingAccionId(ref.idReferencia);
             try {
-              const referenciaActual = await obtenerReferenciaPorId(ref.idReferencia);
+              // obtenemos la referencia actual con idReferencia (string)
+              const referenciaActual = await obtenerReferenciaPorId(String(ref.idReferencia));
 
               const payload = {
                 ...referenciaActual,
                 activo: !referenciaActual.activo,
               };
 
-              await actualizarReferencia(ref.idReferencia, payload);
+              // Llamada al service para actualizar:
+              // Para mantener separation of concerns, asumimos que existe la función:
+              await (await import("../../services/referenciaService")).actualizarReferencia(
+                (ref.idReferencia),
+                payload
+              );
 
               Alert.alert(
                 "Éxito",
@@ -130,16 +149,19 @@ export default function ListaReferencias() {
   const renderReferencia = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <Text style={styles.nombre}>{item.nombre}</Text>
-      <Text>Código: {item.codigo}</Text>
+
+      {/* mostrar idReferencia (no 'codigo') */}
+      <Text>ID Referencia: {String(item.idReferencia)}</Text>
       <Text>Estado: {item.activo ? "Activa" : "Inactiva"}</Text>
 
       <View style={styles.botones}>
+        {/* EDITAR: enviamos el param idReferencia (nombre exacto) */}
         <Button
           title="Editar"
           onPress={() =>
             router.push({
               pathname: "/editarReferencia",
-              params: { id: item.idReferencia },
+              params: { idReferencia: item.idReferencia }, // <-- CAMBIO: antes usabas "id"
             })
           }
         />
@@ -174,9 +196,7 @@ export default function ListaReferencias() {
 
       <Button
         title={
-          mostrarActivas
-            ? "Mostrando: ACTIVAS (ver INACTIVAS)"
-            : "Mostrando: INACTIVAS (ver ACTIVAS)"
+          mostrarActivas ? "Mostrando: ACTIVAS (ver INACTIVAS)" : "Mostrando: INACTIVAS (ver ACTIVAS)"
         }
         onPress={() => setMostrarActivas(!mostrarActivas)}
         color={mostrarActivas ? "green" : "red"}
@@ -184,22 +204,22 @@ export default function ListaReferencias() {
 
       <TextInput
         style={styles.input}
-        placeholder="Buscar por código..."
-        value={searchCodigo}
-        onChangeText={setSearchCodigo}
+        placeholder="Buscar por idReferencia o nombre..."
+        value={searchText}
+        onChangeText={setSearchText}
+        autoCapitalize="characters"
       />
 
       <FlatList
         data={referenciasFiltradas}
         renderItem={renderReferencia}
-        keyExtractor={(item) => item.idReferencia.toString()}
+        keyExtractor={(item) => String(item.idReferencia)}
+        ListEmptyComponent={() => (
+          <Text style={{ textAlign: "center", marginTop: 10 }}>
+            No hay referencias {mostrarActivas ? "activas" : "inactivas"}.
+          </Text>
+        )}
       />
-
-      {referenciasFiltradas.length === 0 && (
-        <Text style={{ textAlign: "center", marginTop: 10 }}>
-          No hay referencias {mostrarActivas ? "activas" : "inactivas"}.
-        </Text>
-      )}
     </View>
   );
 }

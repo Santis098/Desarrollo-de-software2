@@ -6,6 +6,7 @@ import com.inventario.backend.utils.ValidadorDatos;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.inventario.backend.utils.ValidadorDatos;
 
 import java.util.List;
 
@@ -16,29 +17,17 @@ public class ReferenciaService {
     private ReferenciaRepository referenciaRepository;
 
     // ----------------------------------------------------
-    // VALIDAR FORMATO DE CÓDIGO (RF + números)
-    // ----------------------------------------------------
-    private void validarCodigoRF(String codigo) {
-        if (codigo == null || !codigo.matches("^RF\\d+$")) {
-            throw new IllegalArgumentException(
-                "El código debe iniciar con 'RF' seguido únicamente de números. Ejemplos válidos: RF1, RF05, RF100."
-            );
-        }
-    }
-
-    // ----------------------------------------------------
     // REGISTRAR REFERENCIA
     // ----------------------------------------------------
     public Referencia registrar(Referencia referencia) {
 
-        referencia.setCodigo(referencia.getCodigo().trim().toUpperCase());
+        referencia.setIdReferencia(referencia.getIdReferencia().trim().toUpperCase());
         referencia.setNombre(referencia.getNombre().trim());
 
-        validarCodigoRF(referencia.getCodigo());
         ValidadorDatos.validarReferencia(referencia);
 
-        if (referenciaRepository.findByCodigo(referencia.getCodigo()).isPresent()) {
-            throw new IllegalArgumentException("El código ya está registrado.");
+        if (referenciaRepository.findById(referencia.getIdReferencia()).isPresent()) {
+            throw new IllegalArgumentException("El ID ya está registrado.");
         }
 
         if (referenciaRepository.findByNombre(referencia.getNombre()).isPresent()) {
@@ -63,16 +52,16 @@ public class ReferenciaService {
     }
 
     // ----------------------------------------------------
-    // OBTENER TODAS (ACTIVAS + INACTIVAS)
+    // OBTENER TODAS
     // ----------------------------------------------------
     public List<Referencia> obtenerTodas() {
         return referenciaRepository.findAll();
     }
 
     // ----------------------------------------------------
-    // OBTENER POR ID
+    // OBTENER POR ID (String)
     // ----------------------------------------------------
-    public Referencia obtenerPorId(Long id) {
+    public Referencia obtenerPorId(String id) {
         return referenciaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Referencia no encontrada."));
     }
@@ -80,21 +69,20 @@ public class ReferenciaService {
     // ----------------------------------------------------
     // ACTUALIZAR REFERENCIA
     // ----------------------------------------------------
-    public Referencia actualizar(Long id, Referencia nuevosDatos) {
+    public Referencia actualizar(String id, Referencia nuevosDatos) {
 
         Referencia referencia = referenciaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Referencia no encontrada."));
 
-        nuevosDatos.setCodigo(nuevosDatos.getCodigo().trim().toUpperCase());
+        nuevosDatos.setIdReferencia(nuevosDatos.getIdReferencia().trim().toUpperCase());
         nuevosDatos.setNombre(nuevosDatos.getNombre().trim());
 
-        validarCodigoRF(nuevosDatos.getCodigo());
         ValidadorDatos.validarReferencia(nuevosDatos);
 
-        referenciaRepository.findByCodigo(nuevosDatos.getCodigo())
+        referenciaRepository.findById(nuevosDatos.getIdReferencia())
                 .ifPresent(r -> {
                     if (!r.getIdReferencia().equals(id)) {
-                        throw new IllegalArgumentException("El código ya existe en otra referencia.");
+                        throw new IllegalArgumentException("El ID ya existe en otra referencia.");
                     }
                 });
 
@@ -105,7 +93,7 @@ public class ReferenciaService {
                     }
                 });
 
-        referencia.setCodigo(nuevosDatos.getCodigo());
+        referencia.setIdReferencia(nuevosDatos.getIdReferencia());
         referencia.setNombre(nuevosDatos.getNombre());
         referencia.setActivo(nuevosDatos.isActivo());
 
@@ -115,7 +103,7 @@ public class ReferenciaService {
     // ----------------------------------------------------
     // ELIMINAR (LÓGICO)
     // ----------------------------------------------------
-    public void eliminar(Long id) {
+    public void eliminar(String id) {
 
         Referencia referencia = referenciaRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("La referencia no existe."));
@@ -129,17 +117,16 @@ public class ReferenciaService {
     }
 
     // ----------------------------------------------------
-    // OBTENER POR CÓDIGO
-    // ----------------------------------------------------
-    public Referencia obtenerPorCodigo(String codigo) {
-        return referenciaRepository.findByCodigo(codigo)
-                .orElseThrow(() -> new IllegalArgumentException("Referencia no encontrada."));
-    }
-
-    // ----------------------------------------------------
     // OBTENER POR ESTADO
     // ----------------------------------------------------
     public List<Referencia> obtenerPorEstado(boolean activo) {
         return referenciaRepository.findByActivo(activo);
     }
 }
+
+
+
+
+
+
+

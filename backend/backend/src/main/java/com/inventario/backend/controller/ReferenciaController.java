@@ -17,9 +17,6 @@ public class ReferenciaController {
     @Autowired
     private ReferenciaService referenciaService;
 
-    // ----------------------------------------------------
-    // R01 Registrar Referencia
-    // ----------------------------------------------------
     @PostMapping("/registrar")
     public ResponseEntity<?> registrar(@RequestBody Referencia referencia) {
         try {
@@ -29,45 +26,28 @@ public class ReferenciaController {
         }
     }
 
-    // ----------------------------------------------------
-    // R02 Obtener TODAS (activas + inactivas)
-    // ----------------------------------------------------
     @GetMapping
     public ResponseEntity<List<Referencia>> obtenerTodas() {
         return ResponseEntity.ok(referenciaService.obtenerTodas());
     }
 
-    // ----------------------------------------------------
-    // R03 Obtener solo ACTIVAS
-    // ----------------------------------------------------
     @GetMapping("/activas")
     public ResponseEntity<List<Referencia>> obtenerActivas() {
         return ResponseEntity.ok(referenciaService.obtenerActivas());
     }
 
-    // ----------------------------------------------------
-    // R04 Obtener solo INACTIVAS
-    // ----------------------------------------------------
     @GetMapping("/inactivas")
     public ResponseEntity<List<Referencia>> obtenerInactivas() {
         return ResponseEntity.ok(referenciaService.obtenerInactivas());
     }
 
-    // ----------------------------------------------------
-    // R05 Obtener por estado dinámico
-    //   /api/referencias/estado/true
-    //   /api/referencias/estado/false
-    // ----------------------------------------------------
     @GetMapping("/estado/{activo}")
     public ResponseEntity<List<Referencia>> obtenerPorEstado(@PathVariable boolean activo) {
         return ResponseEntity.ok(referenciaService.obtenerPorEstado(activo));
     }
 
-    // ----------------------------------------------------
-    // R06 Obtener por ID
-    // ----------------------------------------------------
     @GetMapping("/{id}")
-    public ResponseEntity<?> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<?> obtenerPorId(@PathVariable String id) {
         try {
             return ResponseEntity.ok(referenciaService.obtenerPorId(id));
         } catch (Exception e) {
@@ -75,25 +55,8 @@ public class ReferenciaController {
         }
     }
 
-    // ----------------------------------------------------
-    // R07 Buscar por código
-    // ----------------------------------------------------
-    @GetMapping("/codigo/{codigo}")
-    public ResponseEntity<?> obtenerPorCodigo(@PathVariable String codigo) {
-        try {
-            return ResponseEntity.ok(referenciaService.obtenerPorCodigo(codigo));
-        } catch (Exception e) {
-            return ResponseEntity.status(404).body(e.getMessage());
-        }
-    }
-
-    // ----------------------------------------------------
-    // R08 Actualizar Referencia
-    // ----------------------------------------------------
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(
-            @PathVariable Long id,
-            @RequestBody Referencia referencia) {
+    public ResponseEntity<?> actualizar(@PathVariable String id, @RequestBody Referencia referencia) {
         try {
             return ResponseEntity.ok(referenciaService.actualizar(id, referencia));
         } catch (Exception e) {
@@ -101,11 +64,8 @@ public class ReferenciaController {
         }
     }
 
-    // ----------------------------------------------------
-    // R09 Eliminar referencia (lógico)
-    // ----------------------------------------------------
     @DeleteMapping("/eliminar/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+    public ResponseEntity<?> eliminar(@PathVariable String id) {
         try {
             referenciaService.eliminar(id);
             return ResponseEntity.ok("Referencia eliminada correctamente.");

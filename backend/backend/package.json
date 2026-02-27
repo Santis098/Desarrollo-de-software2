@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@react-navigation/elements": "^2.7.0",
+    "expo": "^54.0.25"
+  }
+}

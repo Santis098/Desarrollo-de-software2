@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, Alert, StyleSheet, ActivityIndicator } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { registrarReferencia } from "../../services/referenciaService";
+import { registrarReferencia } from "../../services/referenciaService"; // ← asegúrate que la ruta coincide
 
 export default function RegistrarReferencia() {
   const router = useRouter();
   const [usuario, setUsuario] = useState<any>(null);
 
-  const [codigo, setCodigo] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Ahora usamos idReferencia (string) en vez de codigo
+  const [idReferencia, setIdReferencia] = useState<string>("");
+  const [nombre, setNombre] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Verificar sesión y rol
   const verificarAcceso = async () => {
@@ -48,47 +49,46 @@ export default function RegistrarReferencia() {
   );
 
   const handleRegistrar = async () => {
-    // Normalizar (el problema más común: espacios o minúsculas)
-    const codigoNormalizado = String(codigo || "").trim().toUpperCase();
-    const nombreNormalizado = String(nombre || "").trim();
+    const idRefNormalized = String(idReferencia || "").trim();
+    const nombreNormalized = String(nombre || "").trim();
 
-    console.log("Intento crear referencia. código(raw):", codigo, "=> normalizado:", codigoNormalizado, "nombre:", nombreNormalizado);
-
-    const regexCodigo = /^RF\d+$/;
-
-    if (!codigoNormalizado || !nombreNormalizado) {
-      Alert.alert("Error", "Por favor llena todos los campos.");
+    // Validaciones: idReferencia y nombre obligatorios
+    if (!idRefNormalized || !nombreNormalized) {
+      Alert.alert("Error", "Por favor completa el ID de referencia y el nombre.");
       return;
     }
 
-    if (!regexCodigo.test(codigoNormalizado)) {
-      Alert.alert(
-        "Código inválido",
-        "El código debe empezar con 'RF' seguido de números. Ejemplos válidos: RF1, RF02, RF100"
-      );
-      return;
-    }
+    // Si quieres añadir validación de formato (opcional), descomenta y edita la siguiente línea:
+    // const regex = /^RF\d+$/i; if (!regex.test(idRefNormalized)) { Alert.alert("ID inválido", "Ej: RF01"); return; }
 
     try {
       setLoading(true);
 
-      const nuevaReferencia = {
-        codigo: codigoNormalizado,
-        nombre: nombreNormalizado,
-        activo: true,
+      const payload = {
+        idReferencia: idRefNormalized,
+        nombre: nombreNormalized,
+        activo: true, // por defecto
       };
 
-      console.log("Enviando payload a backend:", nuevaReferencia);
+      console.log("Payload registrar referencia:", payload);
 
-      const response = await registrarReferencia(nuevaReferencia);
+      // Llama al service (asegúrate que registrarReferencia en el service acepta este payload)
+      const response = await registrarReferencia(payload);
 
-      console.log("Respuesta del backend:", response);
+      console.log("Respuesta backend registrar referencia:", response);
 
-      Alert.alert("Éxito", `Referencia ${response.codigo} creada correctamente`);
+      // Ajusta el mensaje según lo que devuelva tu backend; usamos idReferencia por defecto
+      const createdId = response?.idReferencia ?? response?.idReferencia ?? idRefNormalized;
+      Alert.alert("Éxito", `Referencia ${createdId} creada correctamente`);
       router.push("/home");
     } catch (error: any) {
-      console.error("Error al crear referencia:", error.response?.data || error.message);
-      Alert.alert("Error", error.response?.data || "No se pudo crear la referencia.");
+      // manejo de errores más robusto
+      console.error("Error al crear referencia:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "No se pudo crear la referencia. Verifica la conexión y los datos.";
+      Alert.alert("Error", message);
     } finally {
       setLoading(false);
     }
@@ -107,17 +107,17 @@ export default function RegistrarReferencia() {
       <Text style={styles.title}>Registrar Referencia</Text>
 
       <TextInput
-        placeholder="Código (Ej: RF01)"
-        value={codigo}
-        autoCapitalize="characters"
-        onChangeText={setCodigo}
+        placeholder="Nombre de la referencia"
+        value={nombre}
+        onChangeText={setNombre}
         style={styles.input}
       />
 
       <TextInput
-        placeholder="Nombre de la referencia"
-        value={nombre}
-        onChangeText={setNombre}
+        placeholder="ID de referencia (Ej: RF01)"
+        value={idReferencia}
+        autoCapitalize="characters"
+        onChangeText={setIdReferencia}
         style={styles.input}
       />
 

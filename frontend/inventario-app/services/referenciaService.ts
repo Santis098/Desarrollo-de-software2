@@ -19,7 +19,7 @@ export const registrarReferencia = async (
 ): Promise<Referencia> => {
 
   const payload = {
-    codigo: referencia.codigo,
+    idReferencia: referencia.idReferencia,
     nombre: referencia.nombre,
     activo: referencia.activo ?? true
   };
@@ -28,28 +28,10 @@ export const registrarReferencia = async (
   return response.data;
 };
 
+
 // 🔹 Actualizar referencia
-export const actualizarReferencia = async (
-  idReferencia: number,
-  nuevosDatos: Partial<Referencia>
-): Promise<Referencia> => {
-
-  const payload = {
-    codigo: nuevosDatos.codigo,
-    nombre: nuevosDatos.nombre,
-    activo: nuevosDatos.activo
-  };
-
-  const response = await api.put(`/api/referencias/${idReferencia}`, payload);
-  return response.data;
-};
-
-// 🔹 Buscar por código
-export const obtenerReferenciaPorCodigo = async (
-  codigo: string
-): Promise<Referencia> => {
-  const response = await api.get(`/api/referencias/codigo/${codigo}`);
-  return response.data;
+export const editarReferencia = async (idReferencia: string, nuevosDatos: any) => {
+  return api.put(`/api/referencias/${encodeURIComponent(idReferencia)}`, nuevosDatos);
 };
 
 // 🔹 Obtener SOLO activas

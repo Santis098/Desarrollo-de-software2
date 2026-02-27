@@ -2,6 +2,7 @@ package com.inventario.backend.utils;
 
 import com.inventario.backend.model.Usuario;
 import com.inventario.backend.model.Referencia;
+import com.inventario.backend.model.Repuesto;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class ValidadorDatos {
@@ -61,23 +62,64 @@ public class ValidadorDatos {
         }
     }
 
-    // ----------------------------------------------------
-    // VALIDACIONES DE REFERENCIA
-    // ----------------------------------------------------
+    // --------------------------------------------------------------
+    // VALIDAR REFERENCIA
+    // --------------------------------------------------------------
     public static void validarReferencia(Referencia referencia) {
-
         if (referencia == null) {
             throw new IllegalArgumentException("La referencia no puede ser nula.");
         }
 
-        if (referencia.getCodigo() == null || referencia.getCodigo().trim().isEmpty()) {
-            throw new IllegalArgumentException("El código de la referencia no puede estar vacío.");
+        if (referencia.getIdReferencia() == null || referencia.getIdReferencia().trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID de la referencia no puede estar vacío.");
+        }
+
+        if (!referencia.getIdReferencia().matches("^RF\\d+$")) {
+            throw new IllegalArgumentException("El ID de referencia debe iniciar con 'RF' seguido de números.");
         }
 
         if (referencia.getNombre() == null || referencia.getNombre().trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre de la referencia no puede estar vacío.");
+            throw new IllegalArgumentException("El nombre no puede estar vacío.");
+        }
+    }
+
+    // --------------------------------------------------------------
+    // VALIDAR REPUESTO
+    // --------------------------------------------------------------
+    public static void validarRepuesto(Repuesto repuesto) {
+        if (repuesto == null) {
+            throw new IllegalArgumentException("El repuesto no puede ser nulo.");
         }
 
-        // activo no se valida porque tu modelo ya lo define como boolean por defecto
+        if (repuesto.getIdRepuesto() == null || repuesto.getIdRepuesto().trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del repuesto no puede estar vacío.");
+        }
+
+        if (repuesto.getNombre() == null || repuesto.getNombre().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío.");
+        }
+
+        if (repuesto.getCantidad() == null || repuesto.getCantidad() < 0) {
+            throw new IllegalArgumentException("La cantidad debe ser un número positivo.");
+        }
+
+        if (repuesto.getCalidad() == null || repuesto.getCalidad().trim().isEmpty()) {
+            throw new IllegalArgumentException("La calidad no puede estar vacía.");
+        }
+
+        if (repuesto.getMarca() == null || repuesto.getMarca().trim().isEmpty()) {
+            throw new IllegalArgumentException("La marca no puede estar vacía.");
+        }
+
+        if (repuesto.getEstado() == null || repuesto.getEstado().trim().isEmpty()) {
+            throw new IllegalArgumentException("El estado no puede estar vacío.");
+        }
+
+        if (repuesto.getReferencia() == null) {
+            throw new IllegalArgumentException("Debe asignar una referencia válida al repuesto.");
+        }
     }
 }
+
+
+

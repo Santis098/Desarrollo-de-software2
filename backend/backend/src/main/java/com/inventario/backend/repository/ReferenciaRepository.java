@@ -5,18 +5,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 import java.util.List;
 
-public interface ReferenciaRepository extends JpaRepository<Referencia, Long> {
+public interface ReferenciaRepository extends JpaRepository<Referencia, String> {
 
-    Optional<Referencia> findByCodigo(String codigo);
-
+    // Buscar por nombre (único)
     Optional<Referencia> findByNombre(String nombre);
 
-    //  Referencias activas
+    // Referencias activas
     List<Referencia> findByActivoTrue();
 
-    //  Referencias inactivas
+    // Referencias inactivas
     List<Referencia> findByActivoFalse();
 
-    //  Buscar por estado (true = activas, false = inactivas)
+    // Buscar por estado (true = activas, false = inactivas)
     List<Referencia> findByActivo(boolean activo);
 }
+

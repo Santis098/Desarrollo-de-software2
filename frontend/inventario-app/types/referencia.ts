@@ -1,6 +1,5 @@
 export interface Referencia {
-  idReferencia?: number;
-  codigo: string;
+  idReferencia: string ;
   nombre: string;
   activo: boolean;
 }

@@ -9,6 +9,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { DrawerLayout, GestureHandlerRootView } from 'react-native-gesture-handler';
+console.log("DrawerLayout:", DrawerLayout);
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -112,6 +113,31 @@ export default function Home() {
   <Icon name="add-circle-outline" size={22} color="#153cc7" />
   <Text style={styles.drawerText}>Registrar Referencia</Text>
 </TouchableOpacity>
+
+{/* --------- REPUESTOS --------- */}
+
+<TouchableOpacity
+  style={styles.drawerItem}
+  onPress={() => {
+    drawerRef.closeDrawer();
+    router.push('/(admin)/ListaRepuestos');
+  }}
+>
+  <Icon name="list-outline" size={22} color="#153cc7" />
+  <Text style={styles.drawerText}>Lista de Repuestos</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={styles.drawerItem}
+  onPress={() => {
+    drawerRef.closeDrawer();
+    router.push('/(admin)/RegistrarRepuesto');
+  }}
+>
+  <Icon name="construct-outline" size={22} color="#153cc7" />
+  <Text style={styles.drawerText}>Registrar Repuesto</Text>
+</TouchableOpacity>
+
           </>
         ) : (
 

@@ -110,6 +110,7 @@ public Usuario cambiarEstadoUsuario(Long idUsuario, boolean activo) {
 
     usuario.setActivo(activo);
     return usuarioRepository.save(usuario);
-}
+    
+    }
 
 }
