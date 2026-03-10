@@ -1,127 +1,292 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Button, Alert, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { obtenerUsuarios, cambiarEstadoUsuario } from '../../services/usuarioService';
+import React, { useState, useEffect } from "react";
+import {
+View,
+Text,
+FlatList,
+Button,
+Alert,
+StyleSheet,
+ActivityIndicator,
+Platform,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+
+import {
+obtenerUsuarios,
+cambiarEstadoUsuario,
+} from "../../services/usuarioService";
 
 export default function ListaUsuarios() {
-  const [usuarios, setUsuarios] = useState<any[]>([]);
-  const [usuarioActual, setUsuarioActual] = useState<any | null>(null);
-  const router = useRouter();
 
-  // 🔹 Cargar lista de usuarios solo si es admin
-  useEffect(() => {
-    const verificarYcargar = async () => {
-      const data = await AsyncStorage.getItem('usuario');
-      if (!data) {
-        Alert.alert('Sesión expirada', 'Debes iniciar sesión nuevamente.');
-        router.replace('/login');
-        return;
-      }
+const router = useRouter();
 
-      const user = JSON.parse(data);
-      setUsuarioActual(user);
+const [usuarios, setUsuarios] = useState<any[]>([]);
+const [loading, setLoading] = useState(true);
+const [loadingId, setLoadingId] = useState<string | null>(null);
 
-      if (user.rol !== 'ADMIN') {
-        Alert.alert('Acceso denegado', 'Solo los administradores pueden ver esta sección.');
-        router.replace('/home');
-        return;
-      }
+/* ============================= */
+/* VERIFICAR USUARIO */
+/* ============================= */
 
-      await cargarUsuarios();
-    };
+useEffect(() => {
+verificarUsuario();
+}, []);
 
-    verificarYcargar();
-  }, []);
+const verificarUsuario = async () => {
 
-  // 🔁 Cargar usuarios desde backend
-const cargarUsuarios = async () => {
-  try {
-    const lista = await obtenerUsuarios();
+const data = await AsyncStorage.getItem("usuario");
 
-    // 🔤 Ordenar alfabéticamente por nombre
-    const listaOrdenada = lista.sort((a: any, b: any) =>
-      a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
-    );
-
-    setUsuarios(listaOrdenada);
-  } catch (error) {
-    console.error(' Error al cargar usuarios:', error);
-    Alert.alert('Error', 'No se pudo cargar la lista de usuarios.');
-  }
-};
-
-
-  // 🔹 Confirmar desactivación / activación
-  const toggleEstado = (usuario: any) => {
-    Alert.alert(
-      usuario.activo ? 'Desactivar usuario' : 'Activar usuario',
-      `¿Estás seguro de ${usuario.activo ? 'desactivar' : 'activar'} a ${usuario.nombre}?`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Aceptar',
-          onPress: async () => {
-            try {
-              await cambiarEstadoUsuario(usuario.idUsuario, !usuario.activo);
-              Alert.alert('Éxito', `Usuario ${usuario.activo ? 'desactivado' : 'activado'} correctamente.`);
-              await cargarUsuarios();
-            } catch (error) {
-              console.error(' Error al cambiar estado:', error);
-              Alert.alert('Error', 'No se pudo cambiar el estado del usuario.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  // 🔹 Renderizar lista
-  const renderUsuario = ({ item }: { item: any }) => (
-    <View style={styles.card}>
-      <Text style={styles.nombre}>{item.nombre}</Text>
-      <Text>Rol: {item.rol}</Text>
-      <Text>Estado: {item.activo ? 'Activo' : 'Desactivado'}</Text>
-
-      <View style={styles.botones}>
-        <Button
-          title="Editar"
-          onPress={() => router.push({ pathname: '/EditarUsuarioAdmin', params: { idUsuario: item.idUsuario } })}
-        />
-        <Button
-          title={item.activo ? 'Desactivar' : 'Activar'}
-          color={item.activo ? 'red' : 'green'}
-          onPress={() => toggleEstado(item)}
-        />
-      </View>
-    </View>
-  );
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Lista de Usuarios</Text>
-      <FlatList
-        data={usuarios}
-        renderItem={renderUsuario}
-        keyExtractor={(item) => item.idUsuario.toString()}
-      />
-    </View>
-  );
+if (!data) {
+Alert.alert("Sesión expirada", "Debes iniciar sesión nuevamente.");
+router.replace("/login");
+return;
 }
 
+const user = JSON.parse(data);
+
+if (user.rol !== "ADMIN") {
+Alert.alert("Acceso denegado", "Solo los administradores pueden ver esta sección.");
+router.replace("/home");
+return;
+}
+
+cargarUsuarios();
+
+};
+
+/* ============================= */
+/* CARGAR USUARIOS */
+/* ============================= */
+
+const cargarUsuarios = async () => {
+
+try {
+
+setLoading(true);
+
+const lista = await obtenerUsuarios();
+
+setUsuarios(
+Array.isArray(lista)
+? lista.sort((a: any, b: any) =>
+a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
+)
+: []
+);
+
+} catch (error) {
+
+console.error("Error al cargar usuarios:", error);
+Alert.alert("Error", "No se pudo cargar la lista de usuarios.");
+
+} finally {
+
+setLoading(false);
+
+}
+
+};
+
+/* ============================= */
+/* CONFIRMAR (WEB + MOBILE) */
+/* ============================= */
+
+const confirmar = async (mensaje: string) => {
+
+if (Platform.OS === "web") {
+return window.confirm(mensaje);
+}
+
+return new Promise((resolve) => {
+
+Alert.alert("Confirmar", mensaje, [
+{ text: "Cancelar", onPress: () => resolve(false) },
+{ text: "Aceptar", onPress: () => resolve(true) },
+]);
+
+});
+
+};
+
+/* ============================= */
+/* ACTIVAR / DESACTIVAR */
+/* ============================= */
+
+const toggleEstado = async (usuario: any) => {
+
+const accion = usuario.activo ? "desactivar" : "activar";
+
+const ok = await confirmar(
+`¿Seguro que deseas ${accion} a ${usuario.nombre}?`
+);
+
+if (!ok) return;
+
+setLoadingId(usuario.idUsuario);
+
+/* actualización inmediata UI */
+
+setUsuarios((prev) =>
+prev.map((u) =>
+u.idUsuario === usuario.idUsuario
+? { ...u, activo: !usuario.activo }
+: u
+)
+);
+
+try {
+
+await cambiarEstadoUsuario(usuario.idUsuario, !usuario.activo);
+
+} catch (error) {
+
+console.error("Error al cambiar estado:", error);
+
+/* revertir si falla */
+
+setUsuarios((prev) =>
+prev.map((u) =>
+u.idUsuario === usuario.idUsuario
+? { ...u, activo: usuario.activo }
+: u
+)
+);
+
+Alert.alert("Error", "No se pudo cambiar el estado del usuario.");
+
+} finally {
+
+setLoadingId(null);
+
+}
+
+};
+
+/* ============================= */
+/* RENDER ITEM */
+/* ============================= */
+
+const renderUsuario = ({ item }: any) => (
+
+<View style={styles.card}>
+
+<Text style={styles.nombre}>{item.nombre}</Text>
+
+<Text>Rol: {item.rol}</Text>
+
+<Text>Estado: {item.activo ? "Activo" : "Desactivado"}</Text>
+
+<View style={styles.botones}>
+
+<Button
+title="Editar"
+onPress={() =>
+router.push({
+pathname: "/EditarUsuarioAdmin",
+params: { idUsuario: item.idUsuario },
+})
+}
+/>
+
+<View style={{ width: 120 }}>
+
+{loadingId === item.idUsuario ? ( <ActivityIndicator />
+) : (
+<Button
+title={item.activo ? "Desactivar" : "Activar"}
+color={item.activo ? "red" : "green"}
+onPress={() => toggleEstado(item)}
+/>
+)}
+
+</View>
+
+</View>
+
+</View>
+
+);
+
+/* ============================= */
+/* LOADING */
+/* ============================= */
+
+if (loading) {
+
+return ( <View style={styles.center}> <ActivityIndicator size="large" /> <Text>Cargando usuarios...</Text> </View>
+);
+
+}
+
+/* ============================= */
+/* UI */
+/* ============================= */
+
+return (
+
+<View style={styles.container}>
+
+<Text style={styles.title}>Lista de Usuarios</Text>
+
+<FlatList
+data={usuarios}
+renderItem={renderUsuario}
+keyExtractor={(item) => item.idUsuario.toString()}
+ListEmptyComponent={() => (
+<Text style={{ textAlign: "center", marginTop: 20 }}>
+No hay usuarios </Text>
+)}
+/>
+
+</View>
+
+);
+
+}
+
+/* ============================= */
+/* ESTILOS */
+/* ============================= */
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  card: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  nombre: { fontWeight: 'bold', fontSize: 16 },
-  botones: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+
+container: {
+flex: 1,
+padding: 15,
+backgroundColor: "#fff",
+},
+
+center: {
+flex: 1,
+justifyContent: "center",
+alignItems: "center",
+},
+
+title: {
+fontSize: 22,
+fontWeight: "bold",
+textAlign: "center",
+marginBottom: 10,
+},
+
+card: {
+borderWidth: 1,
+borderColor: "#ccc",
+padding: 15,
+borderRadius: 8,
+marginBottom: 10,
+},
+
+nombre: {
+fontWeight: "bold",
+fontSize: 16,
+},
+
+botones: {
+flexDirection: "row",
+justifyContent: "space-between",
+marginTop: 10,
+},
+
 });
