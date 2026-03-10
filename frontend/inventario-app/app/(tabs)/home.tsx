@@ -8,17 +8,20 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
+import { Platform } from 'react-native';
+import 'react-native-gesture-handler';
 import { DrawerLayout, GestureHandlerRootView } from 'react-native-gesture-handler';
 console.log("DrawerLayout:", DrawerLayout);
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useRef } from "react";
 
 export default function Home() {
   const router = useRouter();
   const [usuario, setUsuario] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [drawerRef, setDrawerRef] = useState<any>(null);
+  const drawerRef = useRef<any>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -68,7 +71,7 @@ export default function Home() {
             <TouchableOpacity
               style={styles.drawerItem}
               onPress={() => {
-                drawerRef.closeDrawer();
+                drawerRef.current?.closeDrawer();
                 router.push('/(admin)/ListaUsuarios');
               }}
             >
@@ -79,7 +82,7 @@ export default function Home() {
             <TouchableOpacity
               style={styles.drawerItem}
               onPress={() => {
-                drawerRef.closeDrawer();
+                drawerRef.current?.closeDrawer();
                 router.push({
                   pathname: '/RegistrarUsuario',
                   params: { rol: usuario.rol, nombre: usuario.nombre },
@@ -95,7 +98,7 @@ export default function Home() {
 <TouchableOpacity
   style={styles.drawerItem}
   onPress={() => {
-    drawerRef.closeDrawer();
+    drawerRef.current?.closeDrawer();
     router.push('/(admin)/ListaReferencias');
   }}
 >
@@ -106,7 +109,7 @@ export default function Home() {
 <TouchableOpacity
   style={styles.drawerItem}
   onPress={() => {
-    drawerRef.closeDrawer();
+    drawerRef.current?.closeDrawer();
     router.push('/(admin)/registrarReferencia');
   }}
 >
@@ -119,7 +122,7 @@ export default function Home() {
 <TouchableOpacity
   style={styles.drawerItem}
   onPress={() => {
-    drawerRef.closeDrawer();
+    drawerRef.current?.closeDrawer();
     router.push('/(admin)/ListaRepuestos');
   }}
 >
@@ -130,7 +133,7 @@ export default function Home() {
 <TouchableOpacity
   style={styles.drawerItem}
   onPress={() => {
-    drawerRef.closeDrawer();
+    drawerRef.current?.closeDrawer();
     router.push('/(admin)/RegistrarRepuesto');
   }}
 >
@@ -152,7 +155,7 @@ export default function Home() {
         <TouchableOpacity
           style={styles.drawerItem}
           onPress={() => {
-            drawerRef.closeDrawer();
+            drawerRef.current?.closeDrawer();
             router.push('/EditarUsuario');
           }}
         >
@@ -191,9 +194,15 @@ export default function Home() {
 
       {/*  Header principal */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => drawerRef.openDrawer()}>
-          <Icon name="menu-outline" size={32} color="#153cc7" />
-        </TouchableOpacity>
+        <TouchableOpacity
+  onPress={() => {
+    if (Platform.OS !== "web") {
+      drawerRef.current?.openDrawer();
+    }
+  }}
+>
+  <Icon name="menu-outline" size={32} color="#153cc7" />
+</TouchableOpacity>
         <Text style={styles.headerText}>Inicio</Text>
       </View>
 
@@ -207,18 +216,22 @@ export default function Home() {
     </SafeAreaView>
   );
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <DrawerLayout
-        ref={setDrawerRef}
-        drawerWidth={250}
-        drawerPosition="left"
-        renderNavigationView={renderDrawer}
-      >
-        {mainContent}
-      </DrawerLayout>
-    </GestureHandlerRootView>
-  );
+    if (Platform.OS === "web") {
+  return mainContent;
+}
+
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <DrawerLayout
+          ref={drawerRef}
+          drawerWidth={250}
+          drawerPosition="left"
+          renderNavigationView={renderDrawer}
+        >
+          {mainContent}
+        </DrawerLayout>
+      </GestureHandlerRootView>
+    );
 }
 
 const styles = StyleSheet.create({
