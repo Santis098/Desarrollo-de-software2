@@ -34,6 +34,11 @@ export const editarReferencia = async (idReferencia: string, nuevosDatos: any) =
   return api.put(`/api/referencias/${encodeURIComponent(idReferencia)}`, nuevosDatos);
 };
 
+export const actualizarReferencia = async (id: string, referencia: any) => {
+  const response = await api.put(`/api/referencias/${id}`, referencia);
+  return response.data;
+};
+
 // 🔹 Obtener SOLO activas
 export const obtenerReferenciasActivas = async (): Promise<Referencia[]> => {
   const response = await api.get("/api/referencias/activas");

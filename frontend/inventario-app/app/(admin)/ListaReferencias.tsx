@@ -16,8 +16,8 @@ import {
   obtenerReferenciasActivas,
   obtenerReferenciasInactivas,
   obtenerReferenciaPorId,
-  // actualizarReferencia, // no lo usamos aquí, lo usa la pantalla de edición
-} from "../../services/referenciaService"; // ajusta ruta si es necesario
+  actualizarReferencia
+} from "../../services/referenciaService";
 
 export default function ListaReferencias() {
   const [referencias, setReferencias] = useState<any[]>([]);
@@ -123,10 +123,7 @@ export default function ListaReferencias() {
 
               // Llamada al service para actualizar:
               // Para mantener separation of concerns, asumimos que existe la función:
-              await (await import("../../services/referenciaService")).actualizarReferencia(
-                (ref.idReferencia),
-                payload
-              );
+              await actualizarReferencia(ref.idReferencia, payload);
 
               Alert.alert(
                 "Éxito",
