@@ -22,7 +22,7 @@ import {
 export default function ListaReferencias() {
   const [referencias, setReferencias] = useState<any[]>([]);
   const [referenciasFiltradas, setReferenciasFiltradas] = useState<any[]>([]);
-  const [searchText, setSearchText] = useState<string>(""); // ahora nombre claro
+  const [searchText, setSearchText] = useState<string>("");
   const [usuarioActual, setUsuarioActual] = useState<any | null>(null);
 
   const [loadingLista, setLoadingLista] = useState(false);
@@ -33,7 +33,12 @@ export default function ListaReferencias() {
 
   useEffect(() => {
     const verificarYcargar = async () => {
+
+      console.log("===== VERIFICANDO USUARIO =====");
+
       const data = await AsyncStorage.getItem("usuario");
+
+      console.log("Usuario en AsyncStorage:", data);
 
       if (!data) {
         Alert.alert("Sesión expirada", "Debes iniciar sesión nuevamente.");
@@ -42,6 +47,9 @@ export default function ListaReferencias() {
       }
 
       const user = JSON.parse(data);
+
+      console.log("Usuario parseado:", user);
+
       setUsuarioActual(user);
 
       if (user.rol !== "ADMIN") {
@@ -54,36 +62,52 @@ export default function ListaReferencias() {
     };
 
     verificarYcargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mostrarActivas]);
 
   const cargarReferencias = async () => {
+
+    console.log("===== CARGANDO REFERENCIAS =====");
+
     try {
       setLoadingLista(true);
+
       let lista = mostrarActivas
         ? await obtenerReferenciasActivas()
         : await obtenerReferenciasInactivas();
 
-      // ordenar por nombre (opcional)
+      console.log("Referencias recibidas del backend:", lista);
+
       const listaOrdenada = Array.isArray(lista)
         ? lista.sort((a: any, b: any) =>
             String(a.nombre).localeCompare(String(b.nombre), "es", { sensitivity: "base" })
           )
         : [];
 
+      console.log("Referencias ordenadas:", listaOrdenada);
+
       setReferencias(listaOrdenada);
       setReferenciasFiltradas(listaOrdenada);
+
     } catch (error) {
-      console.error("Error al cargar referencias:", error);
+
+      console.error("ERROR AL CARGAR REFERENCIAS:");
+      console.error(error);
+
       Alert.alert("Error", "No se pudo cargar la lista de referencias.");
+
     } finally {
+
       setLoadingLista(false);
     }
   };
 
-  // Filtrado: por idReferencia y (opcional) por nombre
   useEffect(() => {
+
+    console.log("===== FILTRANDO REFERENCIAS =====");
+
     const q = (searchText || "").trim().toLowerCase();
+
+    console.log("Texto búsqueda:", q);
 
     if (q === "") {
       setReferenciasFiltradas(referencias);
@@ -94,89 +118,142 @@ export default function ListaReferencias() {
       const idRef = String(ref.idReferencia ?? "").toLowerCase();
       const nombre = String(ref.nombre ?? "").toLowerCase();
 
-      // busca por idReferencia o por nombre
       return idRef.includes(q) || nombre.includes(q);
     });
 
+    console.log("Resultado filtrado:", lista);
+
     setReferenciasFiltradas(lista);
+
   }, [searchText, referencias]);
 
-  // Toggle estado (activar/desactivar) — usa obtenerReferenciaPorId y actualizarReferencia desde el backend
   const toggleEstado = (ref: any) => {
-  Alert.alert(
-    ref.activo ? "Desactivar referencia" : "Activar referencia",
-    `¿Estás seguro de ${ref.activo ? "desactivar" : "activar"} "${ref.nombre}"?`,
-    [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Aceptar",
-        onPress: async () => {
-          setLoadingAccionId(ref.idReferencia);
-          try {
 
-            const payload = {
-              idReferencia: ref.idReferencia,
-              nombre: ref.nombre,
-              activo: !ref.activo,
-            };
+    console.log("===== TOGGLE ESTADO =====");
+    console.log("Referencia recibida:", ref);
 
-            await actualizarReferencia(ref.idReferencia, payload);
+    Alert.alert(
+      ref.activo ? "Desactivar referencia" : "Activar referencia",
+      `¿Estás seguro de ${ref.activo ? "desactivar" : "activar"} "${ref.nombre}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Aceptar",
+          onPress: async () => {
 
-            Alert.alert(
-              "Éxito",
-              `Referencia ${payload.activo ? "activada" : "desactivada"} correctamente.`
-            );
+            console.log("Usuario confirmó acción");
 
-            await cargarReferencias();
+            setLoadingAccionId(ref.idReferencia);
 
-          } catch (error) {
-            console.error("Error al cambiar estado:", error);
-            Alert.alert("Error", "No se pudo cambiar el estado.");
-          } finally {
-            setLoadingAccionId(null);
-          }
+            try {
+
+              const payload = {
+                idReferencia: ref.idReferencia,
+                nombre: ref.nombre,
+                activo: !ref.activo,
+              };
+
+              console.log("Payload a enviar:");
+              console.log(payload);
+
+              console.log("Llamando API actualizarReferencia...");
+
+              const response = await actualizarReferencia(ref.idReferencia, payload);
+
+              console.log("Respuesta backend:");
+              console.log(response);
+
+              Alert.alert(
+                "Éxito",
+                `Referencia ${payload.activo ? "activada" : "desactivada"} correctamente.`
+              );
+
+              console.log("Recargando referencias...");
+
+              await cargarReferencias();
+
+            } catch (error: any) {
+
+              console.error("===== ERROR AL CAMBIAR ESTADO =====");
+              console.error(error);
+
+              if (error?.response) {
+                console.error("Respuesta backend:", error.response.data);
+                console.error("Status:", error.response.status);
+              }
+
+              Alert.alert("Error", "No se pudo cambiar el estado.");
+
+            } finally {
+
+              console.log("Finalizó toggle estado");
+
+              setLoadingAccionId(null);
+            }
+          },
         },
-      },
-    ]
-  );
-};
+      ]
+    );
+  };
 
   const renderReferencia = ({ item }: { item: any }) => (
+
     <View style={styles.card}>
+
       <Text style={styles.nombre}>{item.nombre}</Text>
 
-      {/* mostrar idReferencia (no 'codigo') */}
       <Text>ID Referencia: {String(item.idReferencia)}</Text>
       <Text>Estado: {item.activo ? "Activa" : "Inactiva"}</Text>
 
       <View style={styles.botones}>
-        {/* EDITAR: enviamos el param idReferencia (nombre exacto) */}
+
         <Button
           title="Editar"
-          onPress={() =>
+          onPress={() => {
+
+            console.log("Ir a editar referencia:", item.idReferencia);
+
             router.push({
               pathname: "/editarReferencia",
-              params: { idReferencia: item.idReferencia }, // <-- CAMBIO: antes usabas "id"
-            })
-          }
+              params: { idReferencia: item.idReferencia },
+            });
+
+          }}
         />
 
         <View style={{ width: 120 }}>
+
           {loadingAccionId === item.idReferencia ? (
+
             <ActivityIndicator size="small" />
+
           ) : (
+
             <Button
               title={item.activo ? "Desactivar" : "Activar"}
               color={item.activo ? "red" : "green"}
-              onPress={() => toggleEstado(item)}
+              onPress={() => {
+
+                console.log("CLICK BOTON REFERENCIA:", item);
+
+                toggleEstado(item);
+
+              }}
             />
+
           )}
+
         </View>
+
       </View>
+
     </View>
   );
 
   if (loadingLista) {
+
+    console.log("Pantalla en estado loading...");
+
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" />
@@ -186,14 +263,24 @@ export default function ListaReferencias() {
   }
 
   return (
+
     <View style={styles.container}>
+
       <Text style={styles.title}>Lista de Referencias</Text>
 
       <Button
         title={
-          mostrarActivas ? "Mostrando: ACTIVAS (ver INACTIVAS)" : "Mostrando: INACTIVAS (ver ACTIVAS)"
+          mostrarActivas
+            ? "Mostrando: ACTIVAS (ver INACTIVAS)"
+            : "Mostrando: INACTIVAS (ver ACTIVAS)"
         }
-        onPress={() => setMostrarActivas(!mostrarActivas)}
+        onPress={() => {
+
+          console.log("Toggle mostrarActivas:", !mostrarActivas);
+
+          setMostrarActivas(!mostrarActivas);
+
+        }}
         color={mostrarActivas ? "green" : "red"}
       />
 
@@ -201,7 +288,13 @@ export default function ListaReferencias() {
         style={styles.input}
         placeholder="Buscar por idReferencia o nombre..."
         value={searchText}
-        onChangeText={setSearchText}
+        onChangeText={(text) => {
+
+          console.log("Texto búsqueda:", text);
+
+          setSearchText(text);
+
+        }}
         autoCapitalize="characters"
       />
 
@@ -215,6 +308,7 @@ export default function ListaReferencias() {
           </Text>
         )}
       />
+
     </View>
   );
 }
