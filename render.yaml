@@ -1,0 +1,62 @@
+# Render Blueprint (Infrastructure as Code).
+# Al conectar el repo en https://dashboard.render.com/blueprints
+# Render leera este archivo y creara los 2 servicios.
+#
+# - inventario-backend: Spring Boot dockerizado
+# - inventario-frontend: Expo Web servido por nginx (build via Docker)
+#
+# Variables sensibles (DB password, etc.) NO estan aqui: configuralas en
+# el dashboard de Render como "Environment Variables" del servicio.
+
+services:
+  # -----------------------------------------------------------
+  # Backend (Spring Boot + Java 17)
+  # -----------------------------------------------------------
+  - type: web
+    name: inventario-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: backend/backend
+    dockerfilePath: Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_DATASOURCE_URL
+        sync: false   # se define en el dashboard (Supabase URL)
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: LOG_SQL_LEVEL
+        value: INFO
+      - key: LOG_SQL_BIND_LEVEL
+        value: INFO
+
+  # -----------------------------------------------------------
+  # Frontend (Expo Web + nginx)
+  # -----------------------------------------------------------
+  - type: web
+    name: inventario-frontend
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    rootDir: frontend/inventario-app
+    dockerfilePath: Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8080
+      # EXPO_PUBLIC_API_URL se inyecta como build-arg en Docker.
+      # Como Expo embebe la URL en build-time, configurala en el dashboard
+      # de Render como Build Arg (no Runtime) apuntando al backend publico:
+      #   https://inventario-backend.onrender.com
+      - key: EXPO_PUBLIC_API_URL
+        sync: false

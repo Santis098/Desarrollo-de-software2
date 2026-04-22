@@ -1,0 +1,16 @@
+target/
+.idea/
+.vscode/
+*.iml
+*.class
+*.log
+HELP.md
+.gitattributes
+.git/
+.gitignore
+desktop.ini
+node_modules/
+package.json
+package-lock.json
+Dockerfile
+.dockerignore
